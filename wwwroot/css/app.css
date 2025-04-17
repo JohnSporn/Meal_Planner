@@ -1,0 +1,20 @@
+﻿.button-class {
+    background-color: #BEB8EB !important;
+    color: white !important;
+/*    padding: 6px 16px !important;
+    font-family: var(--mud-typography-button-family) !important;
+    font-size: var(--mud-typography-button-size) !important;
+    font-weight: var(--mud-typography-button-weight) !important;
+    line-height: var(--mud-typography-button-lineheight) !important;
+    letter-spacing: var(--mud-typography-button-letterspacing) !important;
+    text-transform: var(--mud-typography-button-text-transform) !important;
+    min-width: 64px !important;
+    box-sizing: border-box !important;
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,border 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
+    border-radius: var(--mud-default-borderradius) !important;
+    color: var(--mud-palette-text-primary) !important;*/
+}
+
+    .button-class:hover {
+        background-color: #AFA8D1 !important;
+    }

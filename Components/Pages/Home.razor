@@ -1,0 +1,53 @@
+﻿@page "/"
+
+@inject IMealService MealService
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4" Class="mb-4">Week of @StartOfWeek - @EndOfWeek</MudText>
+    </MudItem>
+    <MudItem xs="12">
+        <MudButton Style="background-color: #BEB8EB !important; color:white !important;" Variant="Variant.Filled" OnClick="ShuffleMeals">Generate Meal Plan</MudButton>
+    </MudItem>
+    <MudItem xs="12">
+        <MudTable Items="FullList">
+            <HeaderContent>
+                <MudTh>Day</MudTh>
+                <MudTh>Meal</MudTh>
+                <MudTh>Meal Type</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Day</MudTd>
+                <MudTd>@context.Meal.Name</MudTd>
+                <MudTd>@context.Meal.MealCategory</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" Class="d-flex justify-end">
+        <MudFab Style="background-color: #BEB8EB !important; color:white !important;" StartIcon="@Icons.Material.Filled.Add" Href="/mealform" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    private IEnumerable<Meal> Meals { get; set; } = Enumerable.Empty<Meal>();
+    private string[] Days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private IEnumerable<dynamic> FullList = Enumerable.Empty<dynamic>();
+    private DateOnly StartOfWeek;
+    private DateOnly EndOfWeek;
+
+    protected override void OnInitialized()
+    {
+        var today = DateTime.Today;
+        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+        StartOfWeek = DateOnly.FromDateTime(today.AddDays(-1 * diff).Date);
+        EndOfWeek = StartOfWeek.AddDays(6);
+    }
+
+    private async Task ShuffleMeals()
+    {
+        Meals = await MealService.GetMealsAsync();
+        Random random = new();
+        Meals = Meals.OrderBy(x => random.Next()).Take(Days.Length);
+        FullList = Days.Zip(Meals, (day, meal) => new { Day = day, Meal = meal });
+    }
+}

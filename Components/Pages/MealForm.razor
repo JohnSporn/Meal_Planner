@@ -1,0 +1,82 @@
+﻿@page "/mealform/{id:int?}"
+
+@using System.ComponentModel.DataAnnotations
+@inject IMealService MealService
+@inject ISnackbar Snackbar
+
+<MudStack>
+    <MudButton Href="/" Variant="Variant.Text" Color="Color.Default" StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+    <EditForm Model="Input" OnValidSubmit="SaveMeal">
+        <DataAnnotationsValidator />
+        <MudPaper Class="pa-16 ma-2" Elevation="2">
+            <MudStack>
+                <MudTextField Label="Name of Meal" @bind-Value="Input.Name" />
+                <MudSelect T="Category" Label="Select Category" @bind-Value="Input.MealCategory">
+                    @foreach (Category category in Enum.GetValues(typeof(Category)))
+                    {
+                        <MudSelectItem Value="category">@category</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Style="background-color: #BEB8EB !important; color:white;" ButtonType="ButtonType.Submit" Variant="Variant.Filled" FullWidth="true" Class="ml-auto">Create</MudButton>
+            </MudStack>
+        </MudPaper>
+    </EditForm>
+</MudStack>
+
+@code {
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id == 0)
+        {
+            Input = new();
+        }
+        else
+        {
+            var meal = await MealService.GetMealByIdAsync(Id);
+            Input = new InputModel
+                {
+                    Name = meal.Name,
+                    MealCategory = meal.MealCategory
+                };
+        }
+    }
+
+    private async void SaveMeal()
+    {
+        if (Input.Name == null || Input.MealCategory == null)
+        {
+            return;
+        }
+        var meal = new Meal
+            {
+                Name = Input.Name,
+                MealCategory = Input.MealCategory
+            };
+        int id = await MealService.AddMealAsync(meal);
+
+        Snackbar.Clear();
+        if (id != 0)
+        {
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
+            Snackbar.Add("Meal Created Successfully", Severity.Normal);
+        }
+        else
+        {
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
+            Snackbar.Add("Error Creating Meal", Severity.Error);
+        }
+    }
+
+    public class InputModel
+    {
+        [Required(ErrorMessage = "Name is required")]
+        public string Name { get; set; }
+        [Required(ErrorMessage = "Category is required")]
+        public Category MealCategory { get; set; }
+    }
+}
