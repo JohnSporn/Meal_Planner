@@ -7,7 +7,13 @@
         <MudText Typo="Typo.h4" Class="mb-4">Week of @StartOfWeek - @EndOfWeek</MudText>
     </MudItem>
     <MudItem xs="12">
-        <MudButton Style="background-color: #BEB8EB !important; color:white !important;" Variant="Variant.Filled" OnClick="ShuffleMeals">Generate Meal Plan</MudButton>
+        <MudStack Row="true">
+            <MudButton Style="background-color: #BEB8EB !important; color:white !important;" Variant="Variant.Filled" OnClick="ShuffleMeals">@(Meals.Any() ? "Shuffle Meals" : "Generate Meal Plan")</MudButton>
+            @if(Meals.Any())
+            {
+                <MudButton Style="background-color: #BEB8EB !important; color:white !important;" Variant="Variant.Filled" OnClick="ClearPlan">Clear Plan</MudButton>
+            }
+        </MudStack>
     </MudItem>
     <MudItem xs="12">
         <MudTable Items="Meals">
@@ -23,11 +29,11 @@
                 <MudTd>@context.Meal.MealCategory</MudTd>
                 <MudTd>
                     <MudToggleIconButton Icon="@Icons.Material.Filled.CheckBoxOutlineBlank"
-                                         Color="@Color.Error"
-                                         ToggledIcon="@Icons.Material.Filled.CheckBox"
-                                         ToggledColor="@Color.Success"
-                                         Toggled="@context.Checked"
-                                         @onclick="() => SaveMeal(context.Meal)" />
+                    Color="@Color.Error"
+                    ToggledIcon="@Icons.Material.Filled.CheckBox"
+                    ToggledColor="@Color.Success"
+                    Toggled="@context.Checked"
+                    @onclick="() => SaveMeal(context.Meal)" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
@@ -100,5 +106,10 @@
         ).ToList();
 
         StateHasChanged();
+    }
+
+    private void ClearPlan()
+    {
+        Meals = new();
     }
 }
