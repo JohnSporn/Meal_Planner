@@ -10,16 +10,25 @@
         <MudButton Style="background-color: #BEB8EB !important; color:white !important;" Variant="Variant.Filled" OnClick="ShuffleMeals">Generate Meal Plan</MudButton>
     </MudItem>
     <MudItem xs="12">
-        <MudTable Items="FullList">
+        <MudTable Items="Meals">
             <HeaderContent>
                 <MudTh>Day</MudTh>
                 <MudTh>Meal</MudTh>
                 <MudTh>Meal Type</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Day</MudTd>
                 <MudTd>@context.Meal.Name</MudTd>
                 <MudTd>@context.Meal.MealCategory</MudTd>
+                <MudTd>
+                    <MudToggleIconButton Icon="@Icons.Material.Filled.CheckBoxOutlineBlank"
+                                         Color="@Color.Error"
+                                         ToggledIcon="@Icons.Material.Filled.CheckBox"
+                                         ToggledColor="@Color.Success"
+                                         Toggled="@context.Checked"
+                                         @onclick="() => SaveMeal(context.Meal)" />
+                </MudTd>
             </RowTemplate>
         </MudTable>
     </MudItem>
@@ -29,25 +38,67 @@
 </MudGrid>
 
 @code {
-    private IEnumerable<Meal> Meals { get; set; } = Enumerable.Empty<Meal>();
-    private string[] Days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
-    private IEnumerable<dynamic> FullList = Enumerable.Empty<dynamic>();
     private DateOnly StartOfWeek;
     private DateOnly EndOfWeek;
+    private List<Meal> MealPlan = new();
+    private List<(string Day, Meal Meal, bool Checked)> Meals = new();
+    private readonly string[] Days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    private readonly Random _random = new();
 
     protected override void OnInitialized()
     {
         var today = DateTime.Today;
         int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
-        StartOfWeek = DateOnly.FromDateTime(today.AddDays(-1 * diff).Date);
+        StartOfWeek = DateOnly.FromDateTime(today.AddDays(-diff));
         EndOfWeek = StartOfWeek.AddDays(6);
     }
 
     private async Task ShuffleMeals()
     {
-        Meals = await MealService.GetMealsAsync();
-        Random random = new();
-        Meals = Meals.OrderBy(x => random.Next()).Take(Days.Length);
-        FullList = Days.Zip(Meals, (day, meal) => new { Day = day, Meal = meal });
+        var allMeals = await MealService.GetMealsAsync();
+
+        if (Meals.Count == 0)
+        {
+            var shuffledMeals = allMeals.OrderBy(_ => _random.Next())
+                                        .Take(Days.Length)
+                                        .ToList();
+
+            Meals = Days.Zip(shuffledMeals, (day, meal) => (Day: day, Meal: meal, Checked: false)).ToList();
+            return;
+        }
+
+        var uncheckedMeals = Meals.Where(m => !m.Checked).Select(m => m.Meal).ToList();
+
+        var usedMealIds = Meals.Select(m => m.Meal.Id).ToHashSet();
+        var remainingMeals = allMeals.Where(m => !usedMealIds.Contains(m.Id)).ToList();
+
+        var mealsToShuffle = uncheckedMeals.Concat(remainingMeals).ToList();
+
+        var shuffledMealsToUpdate = mealsToShuffle.OrderBy(_ => _random.Next()).ToList();
+
+        int shuffleIndex = 0;
+        Meals = Meals.Select(m =>
+            m.Checked
+                ? m
+                : (m.Day, shuffledMealsToUpdate[shuffleIndex++], Checked: false)
+        ).ToList();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SaveMeal(Meal meal)
+    {
+        if (!MealPlan.Any(m => m.Id == meal.Id))
+        {
+            MealPlan.Add(meal);
+        }
+
+        Meals = Meals.Select(m =>
+            m.Meal.Id == meal.Id
+                ? (m.Day, m.Meal, Checked: true)
+                : m
+        ).ToList();
+
+        StateHasChanged();
     }
 }
